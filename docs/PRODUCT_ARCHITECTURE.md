@@ -110,10 +110,23 @@ frontend scaffold, not the Phase 0–90-day MVP defined in
 [`/docs/product/roadmap.md`](./product/roadmap.md), which requires the real data model, tenancy,
 and AI pipeline from [`/docs/architecture`](./architecture) to actually be built.
 
+## Database layer (added post-scaffold)
+
+Sprint 1's Identity & Tenancy schema is implemented for real — not just documented — in
+`server/db/`: Drizzle ORM schema (`schema.ts`), a lazy Postgres client (`client.ts`), a
+`withOrgContext` transaction helper that sets `app.current_org_id` per request
+(`context.ts`), and the system role/permission seed data (`seed-data.ts` + `scripts/seed.ts`).
+`drizzle/0000_sprint1_platform_foundation.sql` is the generated migration — organizations, users,
+organization_memberships, roles, permissions, role_permissions, with RLS policies matching
+[`docs/adr/ADR-002-multi-tenancy-strategy.md`](./adr/ADR-002-multi-tenancy-strategy.md).
+Nothing in `app/`/`services/` uses this yet — it's provisioned and ready for the first real service
+to swap onto it. Apply it with `npm run db:migrate` (needs `DATABASE_URL` set), then `npm run db:seed`.
+
 ## Roadmap
 
 1. Wire Supabase: swap `MockAgentService`/`MockCandidateService`/etc. for real implementations
-   against the schema in [`database-schema.md`](./database-schema.md) — interfaces don't change.
+   against the schema in [`database-schema.md`](./database-schema.md) and `server/db/schema.ts` —
+   interfaces don't change.
 2. Auth + multi-tenancy per [`docs/architecture/03-security-and-tenancy.md`](./architecture/03-security-and-tenancy.md).
 3. Build out the placeholder routes (Jobs, Candidates, Pipeline, Companies, Contacts) against real
    data, per the epics in [`docs/product/backlog.md`](./product/backlog.md).
