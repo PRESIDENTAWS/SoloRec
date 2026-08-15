@@ -1,100 +1,79 @@
 # SoloRec AI — Staffing HQ
 
-AI-native operating system for solo recruiters, full-desk recruiters, and boutique staffing
-agencies — combining an ATS, a CRM, AI "employees" with human approval gates, and an executive
-command center into one product.
+**Stay boutique. Operate enterprise.** An AI-native staffing operating system for solo recruiters
+and 1–5 person boutique agencies.
 
-## Status
+## Status (branch `feature/backend-foundation`)
 
-This branch (`feature/ai-hq`) is a **frontend MVP scaffold**: real navigation, real routes, real
-typed domain models, and a working 3D AI-agent office visualization, running entirely on
-clearly-labeled mock data. No backend is connected yet. See
-[`docs/PRODUCT_ARCHITECTURE.md`](./docs/PRODUCT_ARCHITECTURE.md) for exactly what's built vs.
-placeholder.
+This branch turns the mock-data scaffold into a **real, operational vertical slice**:
 
-The full pre-code architecture this scaffold is grounded in — data model, multi-tenant security,
-RBAC, AI/agent governance, ADRs, and a 30/60/90 roadmap — lives in
-[`/docs/architecture`](./docs/architecture) and was approved before this scaffold was built. Start
-there for the system's actual target design; this README covers what's runnable today.
+- **Auth active** — Supabase Auth (email/password), signup/login/logout, password reset, protected
+  routes via middleware.
+- **Multi-tenancy active** — every user belongs to an organization; org context resolved
+  server-side (never from client input), enforced by Postgres RLS.
+- **Core recruiting CRUD active** — companies, contacts, jobs, candidates, pipeline (applications)
+  are real Supabase-backed create/read/update, not mock data.
+- **AVA candidate matching active** — "Assign to AVA" on a job runs deterministic scoring +
+  optional AI qualitative analysis, writes `candidate_matches`, emits `agent_events`, and raises a
+  human `approval` for outreach.
+- **Approval engine active** — approve/reject persists, records events + audit log, and (on
+  approve) creates a follow-up draft task. No autonomous outreach.
+- **Realtime AI HQ** — agent status, activity, and approvals update live via Supabase Realtime.
+- **Live/Demo indicator** — reflects the actual realtime connection state, not a hardcoded "Live".
+- Other 8 agents remain visualized but simulated/disabled — only AVA executes real work this sprint.
 
-## Product vision
+## ⚠️ Schema reconciliation required before this ships to production
 
-SoloRec combines, in one product:
-
-- **ATS/CRM** — clients, contacts, jobs, candidates, pipeline
-- **Recruiting workflows** — sourcing, screening, submissions, interviews, offers, placements
-- **AI employees** — named agents (sourcing, matching, compliance, finance, BD, client success,
-  legal/risk, executive intelligence) that draft, recommend, and — only with human approval —
-  execute
-- **Approval workflows** — every consequential AI action (outreach, client communication,
-  candidate rejection, offer decisions, contracts, financial transactions) requires a human
-  decision by default
-- **Real-time activity** — a live event feed of what the AI workforce is doing
-- **Executive command center** — agency-wide KPIs, priority actions, and an AI-narrated brief
-- **3D AI workplace visualization** — a control-layer view of the AI workforce; presentation only,
-  never a home for business logic
+This branch defines its own additive schema in `supabase/migrations/` using table names
+`approvals`, `agent_tasks`, `agent_events`, `candidate_matches`. The **pre-existing production
+Supabase schema uses different names** (`approval_requests`, `agent_runs`, `events`,
+`candidate_job_matches`, plus `sales_opportunities`, `job_requirements`, etc.). These migrations
+must be reconciled with production — **do not run them blindly against the existing project.** See
+`docs/PRODUCT_ARCHITECTURE.md` → "Schema reconciliation".
 
 ## Stack
 
-- Next.js (App Router) + React + TypeScript (strict mode) + Tailwind CSS
-- React Three Fiber + Three.js + drei — the 3D office visualization
-- lucide-react — icons
-- Supabase-ready / PostgreSQL-ready service interfaces (`services/*`) — no live backend yet
-- pgvector-ready memory model (`types/memory.ts`, `services/memory/memoryService.ts`)
+Next.js 14 (App Router) · React 18 · TypeScript (strict) · Tailwind · Supabase (Auth + Postgres +
+RLS + Realtime) · React Three Fiber (AI office visualization) · Zod (validation) · Vitest (tests).
 
 ## Setup
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
+cp .env.example .env.local   # fill in Supabase + AI provider values
+npm run dev                  # http://localhost:3000
 ```
 
-Other scripts: `npm run build`, `npm run start`, `npm run typecheck`, `npm run lint`.
+Scripts: `npm run build`, `npm run typecheck`, `npm run test`, `npm run db:seed`.
 
-Copy `.env.example` to `.env.local` only once a real Supabase project and AI provider key exist —
-the app runs fully on mock data with no environment variables set.
+### Required environment variables
+
+| Variable | Where | Notes |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | client + server | Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client + server | Anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | server only | Never exposed to browser |
+| `AI_PROVIDER` | server | `anthropic` (default) or `openai` |
+| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | server | Only the selected provider's key is needed |
+| `NEXT_PUBLIC_APP_URL` | client | Base URL for auth redirect links |
 
 ## Architecture
 
 ```
-UI (app/, components/)
-   ↓
-Services (services/*)  — interfaces + mock implementations, the seam a real backend replaces
-   ↓
-Mock data (lib/*)       — clearly labeled, not disguised as real records
+UI (app/, components/)  — Server Components read, Server Actions mutate
+        ↓
+Domain services (services/*)  — every method takes ctx {organizationId, userId, role};
+        ↓                        requirePermission() + Zod validation + audit logging
+Supabase (lib/supabase/*)  — RLS enforces tenant isolation as defense-in-depth
 ```
 
-Three.js components (`components/office/*`) hold no business logic — they render agents and a
-selection callback passed in as props. Full details:
-[`docs/PRODUCT_ARCHITECTURE.md`](./docs/PRODUCT_ARCHITECTURE.md) ·
-[`docs/AI_AGENT_ARCHITECTURE.md`](./docs/AI_AGENT_ARCHITECTURE.md) ·
-[`docs/database-schema.md`](./docs/database-schema.md).
+Docs: `docs/PRODUCT_ARCHITECTURE.md` · `docs/AI_AGENT_ARCHITECTURE.md` ·
+`docs/database-schema.md` · `docs/architecture/*` · `docs/adr/*` (ADR-011 = Supabase Auth,
+superseding ADR-008/Clerk).
 
-## Current MVP
+## The one real workflow this proves
 
-- Full sidebar navigation across Overview / Recruiting / Operations / AI Workforce / System
-- AI HQ Command Center: KPI row, interactive 3D office, agent detail panel
-- Agent directory, agent workspace (AVA's sourcing funnel + candidate table is fully built out),
-  agent memory placeholder, agent builder (local/mock create)
-- Approval Center with working (client-side, non-persisted) approve/reject
-- Live Activity feed
-- Placeholder routes for Jobs, Candidates, Pipeline, Companies, Contacts, Search, Tasks, Calendar,
-  Finance, Reports, Settings — typed, navigable, explicitly marked "coming soon," not faked
-
-## Roadmap
-
-See [`docs/PRODUCT_ARCHITECTURE.md`](./docs/PRODUCT_ARCHITECTURE.md#roadmap) for the scaffold's
-immediate next steps, and [`/docs/product/roadmap.md`](./docs/product/roadmap.md) for the full
-30/60/90-day plan (platform foundation, tenancy/auth, real recruiting data, AI candidate
-intelligence, matching, revenue, Chief of Staff) this scaffold is the first visible slice of.
-
-## Repository layout
-
-```
-/app          Next.js App Router routes
-/components   UI components (layout, ui, dashboard, agents, office, recruiting, approvals, memory)
-/lib          Mock data + shared utilities/config, clearly labeled as mock
-/services     Interface + mock-implementation seams for a future Supabase backend
-/types        Shared TypeScript domain types
-/docs         Architecture package, ADRs, backlog/roadmap, and this scaffold's own docs
-```
+Sign up → organization auto-created → create company → create job → create candidates → add to job
+pipeline → **Assign to AVA** → real candidate scoring + reasoning → shortlist → human approves/
+rejects → event stored + audit logged → AI HQ updates live → refresh, data persists → another org
+cannot see any of it (RLS).

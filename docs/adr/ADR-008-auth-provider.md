@@ -1,6 +1,9 @@
 # ADR-008: Managed Auth Provider (Clerk) with Business RBAC in Our Own Tables
 
-**Status:** Accepted — revisit if per-seat auth-vendor pricing becomes material at scale
+**Status:** Superseded by [ADR-011](./ADR-011-supabase-auth.md) — SoloRec uses Supabase Auth, not
+Clerk. This ADR is retained for its historical reasoning (why a managed provider at all, why RBAC
+stays app-owned regardless of which provider is used), not as the current decision. Do not
+implement anything against Clerk; see ADR-011.
 
 ## Context
 
