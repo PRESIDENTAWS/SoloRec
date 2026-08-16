@@ -22,7 +22,8 @@ const PROTECTED_PREFIXES = [
   "/reports",
   "/settings",
   "/search",
-  "/ai-hq"
+  "/ai-hq",
+  "/portal"
 ];
 
 function isProtectedPath(pathname: string): boolean {
@@ -33,8 +34,15 @@ export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request);
 
   if (isProtectedPath(request.nextUrl.pathname) && !user) {
-    const redirectUrl = new URL("/login", request.url);
-    redirectUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
+    // Send portal visitors to the matching portal login; everyone else to
+    // the recruiter login.
+    const pathname = request.nextUrl.pathname;
+    let loginPath = "/login";
+    if (pathname.startsWith("/portal/client")) loginPath = "/login/client";
+    else if (pathname.startsWith("/portal/candidate")) loginPath = "/login/candidate";
+
+    const redirectUrl = new URL(loginPath, request.url);
+    redirectUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
