@@ -9,7 +9,6 @@ import {
   Receipt,
   BarChart3,
   UserRound,
-  FileUser,
   Sparkles,
   FolderClosed,
   ClipboardList,
@@ -47,7 +46,7 @@ export const CLIENT_NAV: PortalNavItem[] = [
 export const CANDIDATE_NAV: PortalNavItem[] = [
   { label: "Dashboard", href: "/candidate", icon: LayoutDashboard },
   { label: "Profile", href: "/candidate/profile", icon: UserRound },
-  { label: "Resume", href: "/candidate/resume", icon: FileUser },
+  { label: "Resume", href: "/candidate/resume", icon: FileText },
   { label: "Job Matches", href: "/candidate/matches", icon: Sparkles },
   { label: "Applications", href: "/candidate/applications", icon: ClipboardList },
   { label: "Interviews", href: "/candidate/interviews", icon: CalendarClock },
