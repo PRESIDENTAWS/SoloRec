@@ -6,6 +6,7 @@ import {
   Building2,
   Contact,
   Search,
+  Radar,
   CheckSquare,
   Calendar,
   DollarSign,
@@ -44,6 +45,10 @@ export const SIDEBAR_SECTIONS: NavSection[] = [
       { label: "Contacts", href: "/contacts", icon: Contact },
       { label: "Search", href: "/search", icon: Search }
     ]
+  },
+  {
+    label: "Talent Intelligence",
+    items: [{ label: "Job Intelligence", href: "/job-intelligence", icon: Radar }]
   },
   {
     label: "Operations",

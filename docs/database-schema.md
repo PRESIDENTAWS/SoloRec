@@ -114,3 +114,18 @@ concepts with more granularity, under different names:
 When a real backend is built, follow the architecture package's schema
 ([`02-data-model.md`](./architecture/02-data-model.md)) as the authoritative source — it has the
 full column list, indexes, constraints, and status enums this summary omits.
+
+## Job Intelligence layer
+
+The canonical Job Intelligence schema — `companies_intel`, `jobs`, `job_sources`,
+`job_snapshots`, `job_signals`, `job_reposts`, `company_signals`, `job_watchlists`,
+`job_watchlist_items`, `saved_job_searches` — lives in
+[`supabase/migrations/0001_job_intelligence.sql`](../supabase/migrations/0001_job_intelligence.sql).
+Its design and the scoring model are documented in
+[`docs/JOB_INTELLIGENCE.md`](./JOB_INTELLIGENCE.md).
+
+The central decision is **one universal `jobs` record** that many sources map onto (via
+`job_sources`), rather than a `linkedin_jobs` / `indeed_jobs` / `workday_jobs` table per source.
+The same opportunity seen on several boards and the employer's ATS collapses into one canonical
+job; history accumulates in `job_snapshots` / `job_signals`, which is where the intelligence moat
+starts.

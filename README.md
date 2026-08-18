@@ -23,6 +23,9 @@ SoloRec combines, in one product:
 
 - **ATS/CRM** — clients, contacts, jobs, candidates, pipeline
 - **Recruiting workflows** — sourcing, screening, submissions, interviews, offers, placements
+- **Job Intelligence** — one canonical job record across every source, with Ghost Risk, Hiring
+  Probability and Staffing Opportunity scores that turn job data into revenue intelligence
+  (see [`docs/JOB_INTELLIGENCE.md`](docs/JOB_INTELLIGENCE.md))
 - **AI employees** — named agents (sourcing, matching, compliance, finance, BD, client success,
   legal/risk, executive intelligence) that draft, recommend, and — only with human approval —
   execute
@@ -72,7 +75,12 @@ selection callback passed in as props. Full details:
 
 ## Current MVP
 
-- Full sidebar navigation across Overview / Recruiting / Operations / AI Workforce / System
+- Full sidebar navigation across Overview / Recruiting / Talent Intelligence / Operations /
+  AI Workforce / System
+- Job Intelligence workspace (`/job-intelligence`) — market pulse, AI "who to contact today"
+  recommendations, and a table ranked by Staffing Opportunity, all computed by the real scoring
+  engine (`lib/recruiting`) over mock source listings; Ghost Risk, Hiring Signals, Companies
+  Hiring, Reposted and New Jobs views included
 - AI HQ Command Center: KPI row, interactive 3D office, agent detail panel
 - Agent directory, agent workspace (AVA's sourcing funnel + candidate table is fully built out),
   agent memory placeholder, agent builder (local/mock create)
