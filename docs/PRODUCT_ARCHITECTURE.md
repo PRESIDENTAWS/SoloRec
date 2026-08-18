@@ -103,12 +103,51 @@ Copy `.env.example` to `.env.local` when a real Supabase project and AI provider
 backend is wired up in this starter — the app runs entirely on mock data without any environment
 variables set.
 
-## Current MVP
+## Current state (branch `feature/backend-foundation`)
 
-See the route map above — this is the "Interactive Office + AI HQ shell" milestone. It is a
-frontend scaffold, not the Phase 0–90-day MVP defined in
-[`/docs/product/roadmap.md`](./product/roadmap.md), which requires the real data model, tenancy,
-and AI pipeline from [`/docs/architecture`](./architecture) to actually be built.
+The scaffold described above has been made **operational** on this branch: Supabase Auth, real
+multi-tenant CRM/recruiting CRUD, the AVA candidate-matching workflow, a persisted approval engine,
+and Supabase Realtime driving AI HQ. See the repository `README.md` for the feature list and the
+one end-to-end workflow this proves.
+
+## Schema reconciliation (blocker before production)
+
+This branch ships **its own additive migrations** in `supabase/migrations/` and a hand-written
+`lib/supabase/database.types.ts` matching them. Those migrations use the table names
+`approvals`, `agent_tasks`, `agent_events`, `candidate_matches`, and a Supabase-Auth-based
+identity model (`auth.users` + `profiles` + `organization_memberships`).
+
+The **pre-existing production Supabase project** uses a different, broader schema — table names
+`approval_requests`, `agent_runs`, `events`, `candidate_job_matches`, plus `sales_opportunities`,
+`job_requirements`, `candidate_skills`, `candidate_preferences`, `interview_feedback`, `offers`,
+`compliance_requirements`, `assignments`, `timesheets`, `invoices`, `payments`, `ai_executions`,
+`ai_recommendations`, `communications`, `documents`, `audit_logs`, etc. — and (in the project
+inspected) a `public.users` table rather than `profiles`.
+
+**These two schemas are not compatible as-is.** Before this branch runs against production, a
+decision is required:
+
+- **Option A (recommended): adopt the production schema as canonical.** Rename this branch's
+  service queries and `database.types.ts` to the production table/column names, drop the
+  branch's migrations in favor of the existing schema, and add only *additive* migrations for
+  anything genuinely missing (e.g. RLS `user_organization_ids()` helper if absent). This preserves
+  the richer production model and its RLS.
+- **Option B: apply this branch's migrations to a fresh project.** Only viable if the production
+  project can be discarded — it cannot, per the "do not run destructive statements blindly" rule.
+
+Do **not** run this branch's `CREATE TABLE` migrations against the existing production project —
+they will collide with existing tables. This reconciliation is the first task of the next session.
+
+## Roadmap (after reconciliation)
+
+1. Reconcile schema (above) — align service-layer queries to the canonical production schema.
+2. Deploy to a Vercel preview with the env vars listed in `README.md`; verify the end-to-end
+   workflow against real Supabase.
+3. Extend CRUD to the WIN stage (prospects/opportunities) and OPERATE stage
+   (compliance/assignments/finance) per the sprint plan in the product brief.
+4. Activate the next agents (NOVA client intelligence, ORION executive recommendations) on the
+   same governed pattern AVA established (execution record → recommendation → approval → audit).
+5. pgvector-backed agent memory and client/candidate DNA learning.
 
 ## Roadmap
 

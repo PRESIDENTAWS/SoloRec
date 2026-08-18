@@ -11,7 +11,7 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function Sidebar() {
+export function Sidebar({ orgName }: { orgName: string }) {
   const pathname = usePathname();
 
   return (
@@ -20,9 +20,9 @@ export function Sidebar() {
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-accent-blue to-accent-purple text-white">
           <Rocket size={18} aria-hidden="true" />
         </div>
-        <div>
-          <div className="text-sm font-bold text-slate-50">SoloRec AI</div>
-          <div className="text-[11px] text-slate-500">Staffing Agency OS</div>
+        <div className="min-w-0">
+          <div className="truncate text-sm font-bold text-slate-50">{orgName}</div>
+          <div className="text-[11px] text-slate-500">SoloRec AI</div>
         </div>
       </div>
 
