@@ -75,8 +75,17 @@ selection callback passed in as props. Full details:
 
 ## Current MVP
 
-- Full sidebar navigation across Overview / Recruiting / Talent Intelligence / Operations /
-  AI Workforce / System
+- Public marketing site (`/`) — homepage (hero, product pipeline, three portals, pricing), plus
+  Products / Solutions / Pricing / Resources / Demo / Get Started
+- Universal login (`/login`) — one identity system with role-based access; Recruiter/Agency,
+  Client and Candidate lanes route to `/dashboard`, `/client`, `/candidate` (mock auth seam in
+  `services/auth`)
+- Client portal (`/client`) — dashboard plus Open Requisitions, Submittals, Interviews, Feedback,
+  Offers, Placements, Invoices, Reports
+- Candidate portal (`/candidate`) — dashboard plus Profile, Resume, Job Matches, Applications,
+  Interviews, Messages, Documents, Offers (never exposes internal recruiter data)
+- Recruiter OS behind its own layout (route group `app/(os)`) — full sidebar navigation across
+  Overview / Recruiting / Talent Intelligence / Operations / AI Workforce / System
 - Job Intelligence workspace (`/job-intelligence`) — market pulse, AI "who to contact today"
   recommendations, and a table ranked by Staffing Opportunity, all computed by the real scoring
   engine (`lib/recruiting`) over mock source listings; Ghost Risk, Hiring Signals, Companies
