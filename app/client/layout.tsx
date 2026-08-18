@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { PortalShell } from "@/components/portal/PortalShell";
-import { CLIENT_NAV } from "@/lib/nav/portal-nav";
 
 /**
  * Client portal. Turns SoloRec from internal agency software into a
@@ -13,8 +12,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     <PortalShell
       brand="SoloRec — Client"
       subtitle="Client Portal"
-      navItems={CLIENT_NAV}
-      rootHref="/client"
+      variant="client"
       user={{ name: "Jordan Blake", contextLabel: "Meridian Robotics · Talent Acquisition" }}
     >
       {children}

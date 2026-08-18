@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { PortalShell } from "@/components/portal/PortalShell";
-import { CANDIDATE_NAV } from "@/lib/nav/portal-nav";
 
 /**
  * Candidate portal. A completely different experience from the recruiter OS and
@@ -13,8 +12,7 @@ export default function CandidateLayout({ children }: { children: ReactNode }) {
     <PortalShell
       brand="SoloRec — Candidate"
       subtitle="Candidate Portal"
-      navItems={CANDIDATE_NAV}
-      rootHref="/candidate"
+      variant="candidate"
       user={{ name: "Sam Rivera", contextLabel: "Senior DevOps Engineer · Atlanta, GA" }}
     >
       {children}

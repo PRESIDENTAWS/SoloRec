@@ -45,7 +45,7 @@ export function parseSalary(input?: string): NormalizedSalary {
 
   const text = input.trim();
   const symbol = Object.keys(CURRENCY_BY_SYMBOL).find((s) => text.includes(s));
-  const currency = symbol ? CURRENCY_BY_SYMBOL[symbol] : "USD";
+  const currency = (symbol ? CURRENCY_BY_SYMBOL[symbol] : undefined) ?? "USD";
   const hourly = /\/\s*(hr|hour)|per hour/i.test(text);
 
   const numbers = (text.match(/\d[\d,.]*\s*[km]?/gi) ?? [])

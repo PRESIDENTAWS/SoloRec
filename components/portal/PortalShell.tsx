@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
-import type { PortalNavItem } from "@/lib/nav/portal-nav";
-import { PortalSidebar } from "@/components/portal/PortalSidebar";
+import { PortalSidebar, type PortalVariant } from "@/components/portal/PortalSidebar";
 
 export interface PortalUser {
   name: string;
@@ -14,19 +13,20 @@ export interface PortalUser {
  * structural chrome as the recruiter OS, but deliberately its own component so
  * the two experiences never share recruiter-only surfaces. A real build reads
  * the signed-in session here; the starter passes a mock user.
+ *
+ * The portal is selected with a serializable `variant` string — the sidebar's
+ * nav config (and its icon components) lives entirely on the client side.
  */
 export function PortalShell({
   brand,
   subtitle,
-  navItems,
-  rootHref,
+  variant,
   user,
   children
 }: {
   brand: string;
   subtitle: string;
-  navItems: PortalNavItem[];
-  rootHref: string;
+  variant: PortalVariant;
   user: PortalUser;
   children: ReactNode;
 }) {
@@ -34,7 +34,7 @@ export function PortalShell({
 
   return (
     <div className="flex min-h-screen bg-base-bg text-slate-100">
-      <PortalSidebar brand={brand} subtitle={subtitle} navItems={navItems} rootHref={rootHref} />
+      <PortalSidebar brand={brand} subtitle={subtitle} variant={variant} />
       <div className="flex min-h-screen flex-1 flex-col">
         <header className="flex items-center justify-between gap-4 border-b border-base-line bg-base-bg/80 px-6 py-4 backdrop-blur">
           <div className="min-w-0">
