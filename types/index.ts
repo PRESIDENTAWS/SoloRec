@@ -4,6 +4,7 @@ export * from "./company";
 export * from "./client";
 export * from "./contact";
 export * from "./job";
+export * from "./jobIntelligence";
 export * from "./candidate";
 export * from "./application";
 export * from "./submission";

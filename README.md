@@ -23,6 +23,9 @@ SoloRec combines, in one product:
 
 - **ATS/CRM** — clients, contacts, jobs, candidates, pipeline
 - **Recruiting workflows** — sourcing, screening, submissions, interviews, offers, placements
+- **Job Intelligence** — one canonical job record across every source, with Ghost Risk, Hiring
+  Probability and Staffing Opportunity scores that turn job data into revenue intelligence
+  (see [`docs/JOB_INTELLIGENCE.md`](docs/JOB_INTELLIGENCE.md))
 - **AI employees** — named agents (sourcing, matching, compliance, finance, BD, client success,
   legal/risk, executive intelligence) that draft, recommend, and — only with human approval —
   execute
@@ -72,7 +75,21 @@ selection callback passed in as props. Full details:
 
 ## Current MVP
 
-- Full sidebar navigation across Overview / Recruiting / Operations / AI Workforce / System
+- Public marketing site (`/`) — homepage (hero, product pipeline, three portals, pricing), plus
+  Products / Solutions / Pricing / Resources / Demo / Get Started
+- Universal login (`/login`) — one identity system with role-based access; Recruiter/Agency,
+  Client and Candidate lanes route to `/dashboard`, `/client`, `/candidate` (mock auth seam in
+  `services/auth`)
+- Client portal (`/client`) — dashboard plus Open Requisitions, Submittals, Interviews, Feedback,
+  Offers, Placements, Invoices, Reports
+- Candidate portal (`/candidate`) — dashboard plus Profile, Resume, Job Matches, Applications,
+  Interviews, Messages, Documents, Offers (never exposes internal recruiter data)
+- Recruiter OS behind its own layout (route group `app/(os)`) — full sidebar navigation across
+  Overview / Recruiting / Talent Intelligence / Operations / AI Workforce / System
+- Job Intelligence workspace (`/job-intelligence`) — market pulse, AI "who to contact today"
+  recommendations, and a table ranked by Staffing Opportunity, all computed by the real scoring
+  engine (`lib/recruiting`) over mock source listings; Ghost Risk, Hiring Signals, Companies
+  Hiring, Reposted and New Jobs views included
 - AI HQ Command Center: KPI row, interactive 3D office, agent detail panel
 - Agent directory, agent workspace (AVA's sourcing funnel + candidate table is fully built out),
   agent memory placeholder, agent builder (local/mock create)
