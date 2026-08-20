@@ -16,20 +16,24 @@ deployment simple and the logic colocated with the app that consumes it.
 `indeed_jobs`, `workday_jobs` as primary data. It maintains:
 
 ```
-companies_intel ─┬─ jobs ─┬─ job_sources     (one canonical job, many sources)
-                 │        ├─ job_snapshots   (point-in-time history)
-                 │        ├─ job_signals      (discrete evidence)
-                 │        └─ job_reposts
-                 └─ company_signals
+companies ─┬─ intel_jobs ─┬─ intel_job_sources    (one canonical job, many sources)
+           │              ├─ intel_job_snapshots  (point-in-time history)
+           │              ├─ intel_job_signals    (discrete evidence)
+           │              └─ intel_job_reposts
+           └─ intel_company_signals
 ```
 
 A single opportunity — *Senior Cybersecurity Engineer, Lockheed Martin,
 Orlando FL* — can be posted on LinkedIn, Indeed, the company career site and
 Workday at once. SoloRec recognizes those as the **same** job (one
-`jobs` row) with several `job_sources`. History accumulates in `job_snapshots`
-and `job_signals`; that history is where the moat starts.
+`intel_jobs` row) with several `intel_job_sources`. History accumulates in
+`intel_job_snapshots` and `intel_job_signals`; that history is where the moat
+starts.
 
-Schema: [`supabase/migrations/0001_job_intelligence.sql`](../supabase/migrations/0001_job_intelligence.sql).
+The `intel_` prefix keeps these market-intelligence records distinct from the
+internal requisitions domain, which owns the unprefixed `jobs` table.
+
+Schema: [`supabase/migrations/0002_job_intelligence.sql`](../supabase/migrations/0002_job_intelligence.sql).
 
 ## Three scores, not one
 

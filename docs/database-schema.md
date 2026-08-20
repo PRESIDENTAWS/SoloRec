@@ -120,7 +120,7 @@ full column list, indexes, constraints, and status enums this summary omits.
 The canonical Job Intelligence schema — `companies_intel`, `jobs`, `job_sources`,
 `job_snapshots`, `job_signals`, `job_reposts`, `company_signals`, `job_watchlists`,
 `job_watchlist_items`, `saved_job_searches` — lives in
-[`supabase/migrations/0001_job_intelligence.sql`](../supabase/migrations/0001_job_intelligence.sql).
+[`supabase/migrations/0002_job_intelligence.sql`](../supabase/migrations/0002_job_intelligence.sql).
 Its design and the scoring model are documented in
 [`docs/JOB_INTELLIGENCE.md`](./JOB_INTELLIGENCE.md).
 

@@ -1,22 +1,15 @@
 -- ============================================================================
--- Job Intelligence — canonical job model (design-target migration)
+-- 0002 — Job Intelligence (canonical job model)
 -- ============================================================================
--- No database is connected in this starter; services/* are mock
--- implementations (see docs/database-schema.md). This migration is the schema
--- those services are designed to be swapped onto. The central decision here is
--- ONE universal job record (`jobs`) that many sources map onto — not a separate
--- linkedin_jobs / indeed_jobs / workday_jobs table per source. A single
--- opportunity can appear on LinkedIn, Indeed, the company career site and
--- Workday at once; SoloRec collapses them into one canonical job with many
--- `job_sources`, and builds historical intelligence in `job_snapshots`,
--- `job_signals`, `job_scores` and `company_signals`.
+-- One universal job record that many sources map onto (docs/JOB_INTELLIGENCE.md).
+-- The canonical tables are prefixed `intel_` so the recruiting requisitions
+-- domain can later own the unprefixed `jobs` table (docs/database-schema.md)
+-- without a name collision — these are market-intelligence jobs ingested from
+-- boards/ATSes, not internal requisitions.
 --
--- Every table carries organization_id for row-level tenancy
--- (docs/architecture/03-security-and-tenancy.md). RLS policies are added in a
--- later migration once auth is wired.
+-- Every table carries organization_id and is guarded by org-scoped RLS via the
+-- helper functions from 0001. The service-role key (server-side) bypasses RLS.
 -- ============================================================================
-
-create extension if not exists "pgcrypto";
 
 -- --- Enumerated domains ------------------------------------------------------
 create type job_source_kind as enum (
@@ -25,7 +18,6 @@ create type job_source_kind as enum (
   'linkedin', 'indeed', 'glassdoor', 'ziprecruiter', 'dice', 'monster',
   'other_aggregator'
 );
-
 create type canonical_job_status as enum ('open', 'reposted', 'stale', 'closed');
 create type source_status as enum ('open', 'closed', 'unknown');
 create type job_signal_type as enum (
@@ -38,12 +30,10 @@ create type company_signal_type as enum (
   'high_open_req_count', 'repeat_staffing_pattern'
 );
 
--- --- Companies (intelligence view) ------------------------------------------
--- Distinct from the CRM `clients` table: a company can be a target account
--- surfaced by Job Intelligence long before it becomes a paying client.
-create table if not exists companies_intel (
+-- --- Companies (target accounts / intelligence view) ------------------------
+create table companies (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid not null,
+  organization_id uuid not null references organizations(id) on delete cascade,
   name text not null,
   domain text,
   industry text,
@@ -53,12 +43,13 @@ create table if not exists companies_intel (
   created_at timestamptz not null default now(),
   unique (organization_id, domain)
 );
+create index companies_org_idx on companies (organization_id);
 
 -- --- Canonical jobs ----------------------------------------------------------
-create table if not exists jobs (
+create table intel_jobs (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid not null,
-  company_id uuid not null references companies_intel(id) on delete cascade,
+  organization_id uuid not null references organizations(id) on delete cascade,
+  company_id uuid not null references companies(id) on delete cascade,
 
   title text not null,
   normalized_title text not null,
@@ -87,15 +78,16 @@ create table if not exists jobs (
   created_at timestamptz not null default now(),
   unique (organization_id, fingerprint)
 );
-create index if not exists jobs_company_idx on jobs (company_id);
-create index if not exists jobs_org_status_idx on jobs (organization_id, status);
-create index if not exists jobs_opportunity_idx on jobs (organization_id, staffing_opportunity_score desc);
+create index intel_jobs_company_idx on intel_jobs (company_id);
+create index intel_jobs_org_status_idx on intel_jobs (organization_id, status);
+create index intel_jobs_opportunity_idx
+  on intel_jobs (organization_id, staffing_opportunity_score desc);
 
 -- --- Per-source listings for a canonical job --------------------------------
-create table if not exists job_sources (
+create table intel_job_sources (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid not null,
-  job_id uuid not null references jobs(id) on delete cascade,
+  organization_id uuid not null references organizations(id) on delete cascade,
+  job_id uuid not null references intel_jobs(id) on delete cascade,
   source job_source_kind not null,
   external_id text not null,
   source_url text not null,
@@ -106,13 +98,13 @@ create table if not exists job_sources (
   source_status source_status not null default 'unknown',
   unique (source, external_id)
 );
-create index if not exists job_sources_job_idx on job_sources (job_id);
+create index intel_job_sources_job_idx on intel_job_sources (job_id);
 
 -- --- Point-in-time captures (history / repost detection) --------------------
-create table if not exists job_snapshots (
+create table intel_job_snapshots (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid not null,
-  job_id uuid not null references jobs(id) on delete cascade,
+  organization_id uuid not null references organizations(id) on delete cascade,
+  job_id uuid not null references intel_jobs(id) on delete cascade,
   captured_at timestamptz not null default now(),
   title text,
   description_hash text,
@@ -120,71 +112,93 @@ create table if not exists job_snapshots (
   salary_max numeric,
   source_status source_status not null default 'unknown'
 );
-create index if not exists job_snapshots_job_idx on job_snapshots (job_id, captured_at desc);
+create index intel_job_snapshots_job_idx on intel_job_snapshots (job_id, captured_at desc);
 
 -- --- Discrete signals feeding the scores ------------------------------------
-create table if not exists job_signals (
+create table intel_job_signals (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid not null,
-  job_id uuid not null references jobs(id) on delete cascade,
+  organization_id uuid not null references organizations(id) on delete cascade,
+  job_id uuid not null references intel_jobs(id) on delete cascade,
   signal_type job_signal_type not null,
   value numeric,
   confidence numeric,
   evidence text,
   detected_at timestamptz not null default now()
 );
-create index if not exists job_signals_job_idx on job_signals (job_id);
+create index intel_job_signals_job_idx on intel_job_signals (job_id);
 
 -- --- Repost events -----------------------------------------------------------
-create table if not exists job_reposts (
+create table intel_job_reposts (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid not null,
-  job_id uuid not null references jobs(id) on delete cascade,
+  organization_id uuid not null references organizations(id) on delete cascade,
+  job_id uuid not null references intel_jobs(id) on delete cascade,
   source job_source_kind not null,
   detected_at timestamptz not null default now()
 );
-create index if not exists job_reposts_job_idx on job_reposts (job_id);
+create index intel_job_reposts_job_idx on intel_job_reposts (job_id);
 
 -- --- Company-level signals ---------------------------------------------------
-create table if not exists company_signals (
+create table intel_company_signals (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid not null,
-  company_id uuid not null references companies_intel(id) on delete cascade,
+  organization_id uuid not null references organizations(id) on delete cascade,
+  company_id uuid not null references companies(id) on delete cascade,
   signal_type company_signal_type not null,
   value numeric,
   confidence numeric,
   detected_at timestamptz not null default now()
 );
-create index if not exists company_signals_company_idx on company_signals (company_id);
+create index intel_company_signals_company_idx on intel_company_signals (company_id);
 
 -- --- Watchlists & saved searches --------------------------------------------
-create table if not exists job_watchlists (
+create table intel_watchlists (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid not null,
-  owner_id uuid not null,
+  organization_id uuid not null references organizations(id) on delete cascade,
+  owner_id uuid references profiles(id) on delete set null,
   name text not null,
   created_at timestamptz not null default now()
 );
 
-create table if not exists job_watchlist_items (
+create table intel_watchlist_items (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid not null,
-  watchlist_id uuid not null references job_watchlists(id) on delete cascade,
-  -- A watchlist item targets either a company or a specific canonical job.
-  company_id uuid references companies_intel(id) on delete cascade,
-  job_id uuid references jobs(id) on delete cascade,
+  organization_id uuid not null references organizations(id) on delete cascade,
+  watchlist_id uuid not null references intel_watchlists(id) on delete cascade,
+  company_id uuid references companies(id) on delete cascade,
+  job_id uuid references intel_jobs(id) on delete cascade,
   created_at timestamptz not null default now(),
   check (company_id is not null or job_id is not null)
 );
-create index if not exists job_watchlist_items_list_idx on job_watchlist_items (watchlist_id);
+create index intel_watchlist_items_list_idx on intel_watchlist_items (watchlist_id);
 
-create table if not exists saved_job_searches (
+create table intel_saved_searches (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid not null,
-  owner_id uuid not null,
+  organization_id uuid not null references organizations(id) on delete cascade,
+  owner_id uuid references profiles(id) on delete set null,
   name text not null,
-  -- Serialized query: keywords, location, source and score filters.
   query jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
-create index if not exists saved_job_searches_owner_idx on saved_job_searches (owner_id);
+create index intel_saved_searches_owner_idx on intel_saved_searches (owner_id);
+
+-- --- Row-level security (org-scoped) ----------------------------------------
+-- Each table is readable/writable only within the caller's organization. The
+-- service-role key used by the server bypasses RLS entirely.
+do $$
+declare
+  t text;
+begin
+  foreach t in array array[
+    'companies', 'intel_jobs', 'intel_job_sources', 'intel_job_snapshots',
+    'intel_job_signals', 'intel_job_reposts', 'intel_company_signals',
+    'intel_watchlists', 'intel_watchlist_items', 'intel_saved_searches'
+  ]
+  loop
+    execute format('alter table %I enable row level security;', t);
+    execute format(
+      'create policy %I on %I for all to authenticated
+         using (organization_id = public.current_profile_org())
+         with check (organization_id = public.current_profile_org());',
+      t || '_org_scope', t
+    );
+  end loop;
+end;
+$$;
