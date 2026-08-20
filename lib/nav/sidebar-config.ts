@@ -15,6 +15,7 @@ import {
   Sparkles,
   ShieldCheck,
   Activity,
+  Radio,
   Settings,
   type LucideIcon
 } from "lucide-react";
@@ -63,6 +64,7 @@ export const SIDEBAR_SECTIONS: NavSection[] = [
     label: "AI Workforce",
     items: [
       { label: "AI HQ", href: "/ai-hq", icon: Sparkles },
+      { label: "Command Center", href: "/ai-hq/command-center", icon: Radio },
       { label: "Agents", href: "/ai-hq/agents", icon: Bot },
       { label: "Approvals", href: "/ai-hq/approvals", icon: ShieldCheck },
       { label: "Activity", href: "/ai-hq/activity", icon: Activity }
